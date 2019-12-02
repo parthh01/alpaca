@@ -41,7 +41,7 @@ while api.get_clock().is_open:
                 derivatives[i][j] = (derivatives[i][j-1] - derivatives[i-1][j-1])/math.factorial(j) # just changed this to the actual term
         sum_taylor.append(np.sum(derivatives[i][1:len(derivatives[i])]))
     if holding: 
-        if (sum_taylor[-1] < 0) & (float(buy_price) <= api.polygon.last_quote(ticker).askprice): 
+        if (float(buy_price) <= api.polygon.last_quote(ticker).askprice): 
             order_id = api.submit_order(ticker,order_size,side = 'sell',type='market',time_in_force = 'day')
             time.sleep(1)
             holding = not holding 
