@@ -65,8 +65,8 @@ def get_stock():
     return stocks[pos]
 
 
-api_key_id = 'PK4IP7X02TNTHBIBEYD9'
-api_secret_key = 'X3YeWjH187bq5NhdFSzmhymDHskjobUanE60ckmm'
+api_key_id = 'PKLKTLTTS2X68EQUKOR3'
+api_secret_key = 'FrERKfP9Lt/RtC9Y8vJXFyhc9qKShrZjzxo5qD0E'
 endpoint_url = 'https://paper-api.alpaca.markets'
 
 
@@ -90,6 +90,13 @@ sum_taylor = []
 holding = False 
 start_bal = float(account.daytrading_buying_power)
 
+for i in range(len(stock_df)): 
+    derivatives[i][0] = stock_df.iloc[i]['close']
+    if i > 0: 
+        for j in range(1,i): 
+            derivatives[i][j] = (derivatives[i][j-1] - derivatives[i-1][j-1])/math.factorial(j) # just changed this to the actual term
+    sum_taylor.append(np.sum(derivatives[i][1:len(derivatives[i])]))
+
 
 # order_id = api.submit_order('ACB',1,side = 'buy',type ='market',time_in_force= 'day').id
 # time.sleep(1)
@@ -97,16 +104,11 @@ start_bal = float(account.daytrading_buying_power)
 
 
 while api.get_clock().is_open: 
-    for i in range(len(stock_df)): 
-        derivatives[i][0] = stock_df.iloc[i]['close']
-        if i > 0: 
-            for j in range(1,i): 
-                derivatives[i][j] = (derivatives[i][j-1] - derivatives[i-1][j-1])/math.factorial(j) # just changed this to the actual term
-        sum_taylor.append(np.sum(derivatives[i][1:len(derivatives[i])]))
     if holding: 
         if  (api.polygon.last_quote(ticker).askprice > float(buy_price)) : 
-            order_id = api.submit_order(ticker,order_size,side = 'sell',type='market',time_in_force = 'day')
-            time.sleep(1)
+            order_id = api.submit_order(ticker,order_size,side = 'sell',type='limit',limit_price=float(buy_price)+0.01,time_in_force = 'day').id
+            while api.get_order(order_id).filled_avg_price is None:
+                time.sleep(1)
             holding = not holding 
             print('sold')
     else: 
@@ -118,9 +120,16 @@ while api.get_clock().is_open:
             print('bought')
         else: 
             ticker = get_stock()
-    stock_df = api.polygon.historic_agg('minute', ticker, limit=limit).df
-    derivatives = np.zeros([len(stock_df),len(stock_df)]) 
-    sum_taylor = []
+            stock_df = api.polygon.historic_agg('minute', ticker, limit=limit).df
+            derivatives = np.zeros([len(stock_df),len(stock_df)]) 
+            sum_taylor = []
+            for i in range(len(stock_df)): 
+                derivatives[i][0] = stock_df.iloc[i]['close']
+                if i > 0: 
+                    for j in range(1,i): 
+                        derivatives[i][j] = (derivatives[i][j-1] - derivatives[i-1][j-1])/math.factorial(j) # just changed this to the actual term
+                sum_taylor.append(np.sum(derivatives[i][1:len(derivatives[i])]))
+    time.sleep(1)
 
 net = start_bal - float(account.daytrading_buying_power)
 
