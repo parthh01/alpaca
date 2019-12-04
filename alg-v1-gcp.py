@@ -105,12 +105,11 @@ for i in range(len(stock_df)):
 
 while api.get_clock().is_open: 
     if holding: 
-        if  (api.polygon.last_quote(ticker).askprice > float(buy_price)) : 
-            order_id = api.submit_order(ticker,order_size,side = 'sell',type='stop_limit',limit_price=float(buy_price)+0.01,time_in_force = 'day',stop_price = float(buy_price)-0.04).id
-            while api.get_order(order_id).filled_avg_price is None:
-                time.sleep(1)
-            holding = not holding 
-            print('sold')
+        order_id = api.submit_order(ticker,order_size,side = 'sell',type='stop_limit',limit_price=float(buy_price)+0.01,time_in_force = 'day',stop_price = float(buy_price)-0.04).id
+        while api.get_order(order_id).filled_avg_price is None:
+            time.sleep(1)
+        holding = not holding 
+        print('sold')
     else: 
         if sum_taylor[-1] > 0 : 
             order_id = api.submit_order(ticker,order_size,side = 'buy',type ='market',time_in_force= 'day').id
